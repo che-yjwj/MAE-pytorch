@@ -16,7 +16,7 @@ from torch.utils.data.dataset import Dataset
 from torchvision.transforms import transforms as imagenet_transforms
 from timm.data.auto_augment import rand_augment_transform, augment_and_mix_transform, auto_augment_transform
 from timm.data.transforms import _pil_interp
-
+import glob
 
 class ImageDataset(Dataset):
     def __init__(self,
@@ -32,14 +32,17 @@ class ImageDataset(Dataset):
                  ) -> None:
         super(ImageDataset, self).__init__()
         
-        self.image_file = image_file
-        self.image_list = [x.strip() for x in open(self.image_file).readlines()]
+        # self.image_file = image_file
+        # self.image_list = [x.strip() for x in open(self.image_file).readlines()]
+        self.image_file = glob.glob(image_file + '/*/*.jpg')
+        self.image_list = [i+','+i.split('/')[-2] for i in self.image_file]
+
         self.length = [x for x in range(len(self.image_list))]
         self.train_phase = train_phase
         self.crop_size = crop_size
         self.shuffle = shuffle
-        self.mean = [0.485, 0.456, 0.406]
-        self.std = [0.229, 0.224, 0.225]
+        self.mean = [0.5, 0.5, 0.5]
+        self.std = [0.5, 0.5, 0.5]
         self.hflip_prob = hflip_prob
 
         if self.shuffle and self.train_phase:

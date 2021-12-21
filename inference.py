@@ -7,7 +7,7 @@ import time
 import argparse
 import os
 import numpy as np
-from torchsummaryX import summary
+# from torchsummaryX import summary
 
 
 from PIL import Image
@@ -21,7 +21,7 @@ from torch.cuda.amp import autocast as autocast
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--ckpt', default='vit_finetune_accuracy_0.817258686730356.pth', type=str)
+parser.add_argument('--ckpt', default='vit-mae_losses_0.20102281799793242.pth', type=str)
 parser.add_argument('--test_file', default='val_oss_imagenet_128w.txt', type=str)
 
 

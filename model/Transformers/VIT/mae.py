@@ -169,11 +169,12 @@ class VisionTransfromers(nn.Module):
             norm_layer=nn.LayerNorm, 
             act_layer=nn.GELU, 
             pool='cls',
+            MAE=False
         )
         
         self.model = VisionTransformer(**base_cfg)
         self.model.apply(self.init_weights)
-        self._load_mae_pretrain()
+        # self._load_mae_pretrain('imagenet_weights/vit-mae_losses_0.20102281799793242.pth')
         
     def forward(self, x):
         return self.model(x)
@@ -194,8 +195,8 @@ class VisionTransfromers(nn.Module):
             nn.init.zeros_(module.bias)
             nn.init.ones_(module.weight)
     
-    def _load_mae_pretrain(self):
-        state_dict = torch.load("weights/vit-mae_losses_0.20791142220139502.pth", map_location="cpu")['state_dict']
+    def _load_mae_pretrain(self, ckpt): 
+        state_dict = torch.load(ckpt, map_location="cpu")['state_dict']
         ckpt_state_dict = {}
         for key, value in state_dict.items():
             if 'Encoder.' in key:

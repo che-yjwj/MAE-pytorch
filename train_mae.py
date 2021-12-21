@@ -17,6 +17,8 @@ import torch.distributed as dist
 from model.Transformers.VIT.mae import MAEVisionTransformers as MAE
 # finetune vit
 # from model.Transformers.VIT.mae import VisionTransfromersTiny as MAE
+from model.Transformers.VIT.mae import VisionTransfromers as VIT
+
 from loss.mae_loss import MSELoss, build_mask
 
 # experiement
@@ -53,18 +55,21 @@ parser.add_argument('--rank', default=-1, type=int,
                     help='node rank for distributed training')
 parser.add_argument('--dist-backend', default='nccl',
                     type=str, help='distributed backend')
-parser.add_argument('--local_rank', default=-1, type=int)
-parser.add_argument('--distributed', default=1, type=int,
+parser.add_argument('--local_rank', default=0, type=int)
+parser.add_argument('--distributed', default=0, type=int,
                     help="use distributed method to training!!")
 # ----- data
 parser.add_argument('--train_file', type=str,
-                    default="/data/jiangmingchao/data/dataset/imagenet/train_oss_imagenet_128w.txt")
+                    default="/workspace/data/food/classification/KFOOD201.classification/val")
 parser.add_argument('--val_file', type=str,
-                    default="/data/jiangmingchao/data/dataset/imagenet/val_oss_imagenet_128w.txt")
-parser.add_argument('--num-classes', type=int)
-parser.add_argument('--crop_size', type=int, default=224)
-parser.add_argument('--num_classes', type=int, default=1000)
+                    default="/workspace/data/food/classification/KFOOD201.classification/val")
+parser.add_argument('--num-classes', type=int, default=201)
+parser.add_argument('--crop_size', type=int, default=128)
+parser.add_argument('--num_classes', type=int, default=201)
 parser.add_argument('--color_prob', type=float,  default=0.0)
+
+# ----- pretrained MAE dir
+parser.add_argument('--pretrained_mae_ckpt', default='pretrained_mae_ckpts/vit-mae_losses_0.20102281799793242.pth', type=str)
 
 # ----- checkpoints log dir
 parser.add_argument('--checkpoints-path', default='checkpoints', type=str)
@@ -72,28 +77,27 @@ parser.add_argument('--log-dir', default='logs', type=str)
 
 # ---- optimizer
 parser.add_argument('--optimizer_name', default="adamw", type=str)
-parser.add_argument('--lr', default=1e-1, type=float)
+parser.add_argument('--lr', default=1.5e-4, type=float)
 parser.add_argument('--momentum', default=0.9, type=float)
-parser.add_argument('--batch_size', default=64, type=int)
+parser.add_argument('--batch_size', default=16, type=int)
 parser.add_argument('--num_workers', default=8, type=int)
-parser.add_argument('--cosine', default=0, type=int)
+parser.add_argument('--cosine', default=1, type=int)
 parser.add_argument('--weight_decay', default=5e-2, type=float)
 
 # --- vit 
-parser.add_argument('--patch_size', default=16, type=int)
+parser.add_argument('--patch_size', default=8, type=int)
 parser.add_argument('--calculate_val', default=0, type=int)
-parser.add_argument('--finetune', default=0, type=int)
-
+parser.add_argument('--finetune', default=1, type=int)
 
 # batchsize
-parser.add_argument('--lars', default=1, type=int, help="use the lars optimizer for big batchsize")
+parser.add_argument('--lars', default=0, type=int, help="use the lars optimizer for big batchsize")
 parser.add_argument('--lars_confience', default=2e-2, type=float)
 
 # MixUp
 # * Mixup params
-parser.add_argument('--mixup', type=float, default=0.8,
+parser.add_argument('--mixup', type=float, default=0.0,
                     help='mixup alpha, mixup enabled if > 0. (default: 0.8)')
-parser.add_argument('--cutmix', type=float, default=1.0,
+parser.add_argument('--cutmix', type=float, default=0.0,
                     help='cutmix alpha, cutmix enabled if > 0. (default: 1.0)')
 parser.add_argument('--cutmix-minmax', type=float, nargs='+', default=None,
                     help='cutmix min/max ratio, overrides alpha and enables cutmix if set (default: None)')
@@ -103,12 +107,12 @@ parser.add_argument('--mixup-switch-prob', type=float, default=0.5,
                     help='Probability of switching to cutmix when both mixup and cutmix enabled')
 parser.add_argument('--mixup-mode', type=str, default='batch',
                     help='How to apply mixup/cutmix params. Per "batch", "pair", or "elem"')
-parser.add_argument('--smoothing', type=float, default=0.1, help='Label smoothing (default: 0.1)')
+parser.add_argument('--smoothing', type=float, default=0.0, help='Label smoothing (default: 0.1)')
 
 # ---- train
 parser.add_argument('--model_name', type=str)
-parser.add_argument('--warmup_epochs', default=5, type=int)
-parser.add_argument('--max_epochs', default=90, type=int)
+parser.add_argument('--warmup_epochs', default=40, type=int)
+parser.add_argument('--max_epochs', default=300, type=int)
 
 
 # random seed
@@ -170,7 +174,8 @@ data_list = []
 def main_worker(args):
     total_rank = torch.cuda.device_count()
     print('rank: {} / {}'.format(args.local_rank, total_rank))
-    dist.init_process_group(backend=args.dist_backend)
+    if args.distributed: 
+        dist.init_process_group(backend=args.dist_backend)
     torch.cuda.set_device(args.local_rank)
 
     ngpus_per_node = total_rank
@@ -187,17 +192,20 @@ def main_worker(args):
         'accuracy': train_accuracy_metric
     }
 
-    # model MAE vit
-    
+    # model MAE vit    
     if args.finetune:
-        model = MAE(
-            img_size = 224,
-            patch_size = 16,
-            embed_dim = 192,
+        # vit-base./16 
+        model = VIT(
+            img_size = args.crop_size,
+            patch_size = args.patch_size,
+            embed_dim = 768,
             depth = 12,
-            num_heads = 3,
-            num_classes = args.num_classes
+            num_heads = 12,
+            num_classes = args.num_classes,
         )
+        if args.pretrained_mae_ckpt is not None:
+            model._load_mae_pretrain(args.pretrained_mae_ckpt)
+
     else:
         # vit tiny & vit base 
         # vit base decoder: 512 8 16

@@ -9,12 +9,16 @@ from loss.mae_loss import build_mask
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--ckpt', default='F:/业务数据/vit-mae_losses_0.20102281799793242.pth', type=str)
-parser.add_argument('--test_image', default='E:/val/ILSVRC2012_val_00000004.JPEG', type=str)
+parser.add_argument('--ckpt', default='checkpoints/vit-mae_losses_0.20102281799793242.pth', type=str)
+# parser.add_argument('--test_image', default='/workspace/data/food/classification/KFOOD201.classification/val/000/Img_116_1124.jpg', type=str)
+# parser.add_argument('--test_image', default='/workspace/data/food/classification/KFOOD201.classification/val/001/Img_067_0964.jpg', type=str)
+# parser.add_argument('--test_image', default='/workspace/data/food/classification/KFOOD201.classification/val/002/Img_110_0956.jpg', type=str)
+# parser.add_argument('--test_image', default='test_images/stock-image-praying-mantis.jpg', type=str)
+# parser.add_argument('--test_image', default='test_images/cats_dogs.jpg', type=str)
+# parser.add_argument('--test_image', default='test_images/cats_dogs1.jpg', type=str)
+parser.add_argument('--test_image', default='test_images/shutterstock_795502450.jpg', type=str)
 
 args = parser.parse_args()
-
-
 image = Image.open(args.test_image)
 raw_image = image.resize((224, 224))
 raw_image.save("output/src_image.jpg")
