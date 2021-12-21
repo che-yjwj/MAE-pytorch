@@ -58,7 +58,7 @@ class ImageDataset(Dataset):
         if self.train_phase:
             basic_tf = [
                 imagenet_transforms.RandomResizedCrop(
-                    (self.crop_size, self.crop_size)),
+                    (self.crop_size, self.crop_size), scale=(0.5,1.0)),
                 imagenet_transforms.RandomHorizontalFlip(self.hflip_prob),
                 # imagenet_transforms.RandomVerticalFlip(self.vflip_prob),
             ]
@@ -172,8 +172,8 @@ class ImageDatasetTest(Dataset):
         self.input_size = input_size
         self.crop_size = crop_size
         self.shuffle = shuffle
-        self.mean = [0.485, 0.456, 0.406]
-        self.std = [0.229, 0.224, 0.225]
+        self.mean = [0.5, 0.5, 0.5]
+        self.std = [0.5, 0.5, 0.5]
         self.mode = mode
         if self.shuffle and self.train_phase:
             for _ in range(10):
