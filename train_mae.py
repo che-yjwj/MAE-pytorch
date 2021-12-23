@@ -60,7 +60,7 @@ parser.add_argument('--distributed', default=0, type=int,
                     help="use distributed method to training!!")
 # ----- data
 parser.add_argument('--train_file', type=str,
-                    default="/workspace/data/food/classification/KFOOD201.classification/val")
+                    default="/workspace/data/food/classification/KFOOD201.classification/train")
 parser.add_argument('--val_file', type=str,
                     default="/workspace/data/food/classification/KFOOD201.classification/val")
 parser.add_argument('--num-classes', type=int, default=201)
@@ -69,7 +69,7 @@ parser.add_argument('--num_classes', type=int, default=201)
 parser.add_argument('--color_prob', type=float,  default=0.0)
 
 # ----- pretrained MAE dir
-parser.add_argument('--pretrained_mae_ckpt', default='pretrained_mae_ckpts/vit-mae_losses_0.20102281799793242.pth', type=str)
+parser.add_argument('--pretrained_mae_ckpt', default=None, type=str)
 
 # ----- checkpoints log dir
 parser.add_argument('--checkpoints-path', default='checkpoints', type=str)

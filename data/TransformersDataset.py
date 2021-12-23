@@ -34,8 +34,14 @@ class ImageDataset(Dataset):
         
         # self.image_file = image_file
         # self.image_list = [x.strip() for x in open(self.image_file).readlines()]
-        self.image_file = glob.glob(image_file + '/*/*.jpg')
-        self.image_list = [i+','+i.split('/')[-2] for i in self.image_file]
+        self.image_list = []          
+        folder_list = glob.glob(image_file + '/*')
+        idx_label = 0
+        for folder in folder_list:            
+            image_list = glob.glob(folder + '/*.jpg')
+            for img in image_list:
+                self.image_list.extend([img+','+str(idx_label)])
+            idx_label += 1
 
         self.length = [x for x in range(len(self.image_list))]
         self.train_phase = train_phase
